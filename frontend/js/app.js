@@ -184,7 +184,7 @@ function renderEquipmentRow(eq, responsibleName) {
         <td>${verif}</td>
         <td>${badge}</td>
         <td class="actions-cell">
-            <button class="btn btn-secondary btn-sm" data-action="view" data-id="${eq.id}" title="Подробнее">👁️</button>
+            <a href="/equipment/${eq.id}" class="btn btn-secondary btn-sm" title="Подробнее">👁️</a>
             <button class="btn btn-secondary btn-sm" data-action="edit" data-id="${eq.id}" title="Редактировать">✏️</button>
             <button class="btn btn-danger btn-sm" data-action="delete" data-id="${eq.id}" title="Удалить">🗑️</button>
         </td>

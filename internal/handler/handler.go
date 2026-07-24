@@ -84,7 +84,18 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		h.equipment.RegisterRoutes(api)
 	}
 
-	// 3. Раздача фронтенда (SPA)
+	// 3. Страница оборудования (для QR-кодов)
+	router.GET("/equipment/:id", func(c *gin.Context) {
+		data, err := h.frontendFS.ReadFile("frontend/equipment.html")
+		if err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+	})
+
+	// 4. Раздача фронтенда (SPA)
 	router.NoRoute(h.serveFrontend)
 
 	return router
