@@ -1,22 +1,23 @@
-# departament
+# Department
 
-1. Проверить файл по пути `configs\default.yaml`
-Там можно менять хост и порт
+## Локальная разработка (Windows PowerShell)
 
-2. База данных находится по адресу `data\depatrament_data.db`
-А ФАЙЛ МИГРАЦИИ ПО АДРЕСУ `internal\db\migration\20260325120000_init_schema.up.sql`
+Проект использует локальный официальный архив Go 1.25.0 для Windows amd64. Он
+скачивается с `go.dev`, а SHA-256 архива сверяется с официальными метаданными
+перед распаковкой. Системная установка Go не нужна.
 
-ЕСЛИ ЧТО ТО МЕНЯЕТСЯ В ФАЙЛЕ МИГРАЦИИ СЛЕДУЕТ УДАЛИТЬ СТАРУЮ БАЗУ ДАННЫХ/ЛИБО СМЕНИТЬ В ФАЙЛЕ КОНФИГУРАЦИИ ПУТЬ К БАЗЕ ДАННЫХ(ТОЛЬКО ИМЯ ИЗМЕНИТЬ)
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1  # скачать Go и зависимости
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\dev.ps1        # http://localhost:18180
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check.ps1      # gofmt check, test, vet, build
 ```
-db:
-    local_path: "./data/depatrament_data.db"
-```
 
-# ЗАПУСК ПРОЕКТА 
-1. Для запуска необходимо установить компилятор `GO` версии `1.25.0` и выше.
-2. Перейти в корень проекта
-3. Из корня проекта выполнить команду
-`go run main.go`
+Разработка всегда требует явный `REG_CONFIG_NAME=local`, использует `configs/local.yaml` и создаёт базу только по пути
+`.local/data/department.db`. Файл `data/depatrament_data.db` не используется
+этими командами и не должен применяться для разработки.
 
-4. Дождаться запуска сервера
-`{"L":"INFO","T":"2026-07-24T15:11:28.160+0300","M":"starting server","host":"localhost","port":"8080"}`
+`scripts/dev.ps1` сначала собирает `.local/bin/department.exe`, а затем запускает именно этот бинарник в foreground.
+
+`configs/default.yaml` сохраняется для совместимости с текущим приложением;
+не размещайте в нём секреты. Локальные секреты, если они появятся позднее,
+храните только в неотслеживаемом `.env`.

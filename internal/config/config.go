@@ -6,6 +6,7 @@ import (
 	"mitm-departament/pkg/valid"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -60,53 +61,56 @@ type Config struct {
 	Server ServerConfig `mapstructure:"server"`
 }
 
-// NewConfig загружает конфигурацию с приоритетами:
-// 1. Переменные окружения
-// 2. Файл .env
-// 3. YAML-файл в ./configs/
-// 4. Hardcoded дефолты
+// NewConfig загружает конфигурацию из выбранного YAML-файла в ./configs/.
+// REG_CONFIG_NAME выбирает только файл с таким именем; отсутствие или ошибка
+// разбора файла останавливают запуск, чтобы приложение не открыло другую БД.
 func NewConfig() (*Config, error) {
-	// 1. Загружаем .env если есть
+	// Загружаем .env если есть.
 	_ = godotenv.Load() // игнорируем ошибку если файла нет
 
-	// 2. Инициализируем viper
+	configName, ok := os.LookupEnv("REG_CONFIG_NAME")
+	if !ok || strings.TrimSpace(configName) == "" {
+		return nil, fmt.Errorf("REG_CONFIG_NAME is required and must name a config in ./configs")
+	}
+
+	return newConfigFromDir(".", configName)
+}
+
+func newConfigFromDir(root, configName string) (*Config, error) {
+	configName = strings.TrimSpace(configName)
+	if configName == "" {
+		return nil, fmt.Errorf("config name is empty")
+	}
+	if configName != filepath.Base(configName) || strings.Contains(configName, ".") {
+		return nil, fmt.Errorf("invalid config name %q", configName)
+	}
+
+	return newConfigFromFile(filepath.Join(root, "configs", configName+".yaml"))
+}
+
+func newConfigFromFile(configPath string) (*Config, error) {
+	// Инициализируем viper.
 	v := viper.New()
 	v.AutomaticEnv()
 	v.SetEnvPrefix("REG")
 
-	// Пути к конфигам
-	v.AddConfigPath("./configs")
-
-	// Имя конфига (можно переопределить через REG_CONFIG_NAME)
-	configName := v.GetString("CONFIG_NAME")
-	if configName == "" {
-		configName = "default"
-	}
-	v.SetConfigName(configName)
 	v.SetConfigType("yaml")
+	v.SetConfigFile(configPath)
 
-	// Читаем файл (ошибка допустима — будут использованы дефолты)
-	_ = v.ReadInConfig()
+	if err := v.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("read config %q: %w", configPath, err)
+	}
 
-	// 3. Устанавливаем дефолты
+	// Устанавливаем дефолты только для необязательных параметров.
 	setDefaults(v)
 
-	// 4. Анмаршалим в структуру
+	// Анмаршалим в структуру.
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	// 5. Пост-обработка: если путь к БД не задан — используем дефолт
-	if cfg.DB.LocalPath == "" {
-		wd, err := os.Getwd()
-		if err != nil {
-			return nil, fmt.Errorf("get working directory: %w", err)
-		}
-		cfg.DB.LocalPath = filepath.Join(wd, "departamentMITM.db")
-	}
-
-	// 6. Валидация
+	// Путь к БД обязателен: отсутствие пути — ошибка, а не fallback в корень проекта.
 	if err := valid.ValidateStruct(cfg); err != nil {
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
@@ -121,8 +125,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("app.version", "0.1.0")
 	v.SetDefault("app.env", "development")
 
-	// DB
-	// LocalPath намеренно не задаём здесь — вычислим после анмаршалинга
+	// DB.LocalPath намеренно не имеет default: это обязательный параметр.
 
 	// Logger (совместимо с zap)
 	v.SetDefault("logger.level", "info")

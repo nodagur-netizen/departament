@@ -1,1 +1,18 @@
 Dockerfile
+
+# Project-local development toolchain, caches, and generated artifacts.
+/.tools/
+/.local/
+/.cache/
+
+# Local configuration and secrets.
+.env
+
+# SQLite databases are local state. This does not untrack an existing database.
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+*.sqlite-shm
+*.sqlite-wal
