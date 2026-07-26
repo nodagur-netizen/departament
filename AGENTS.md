@@ -13,4 +13,4 @@ Rules:
 
 ## Project memory
 
-В начале работы прочитать `PRODUCT.md`, `PROJECT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/MVP.md`, `docs/DESIGN_SYSTEM_PLAN.md` и `docs/IDENTITY_AND_ACCESS.md`. После существенных решений обновлять `PROJECT_STATE.md`. Не хранить в памяти, документах или коммитах секреты и персональные данные.
+В начале работы прочитать `PRODUCT.md`, `PROJECT_STATE.md`, `DESIGN.md`, `docs/ARCHITECTURE.md`, `docs/MVP.md`, `docs/DESIGN_SYSTEM_PLAN.md` и `docs/IDENTITY_AND_ACCESS.md`. `PROJECT_STATE.md` — текущая контрольная точка проекта. Выбранный reference-концепт — `frontend/concepts/01-lab-notebook.html` («Лабораторный журнал»); изменения дизайна обязаны следовать `DESIGN.md`. После существенных решений обновлять `PROJECT_STATE.md`. Не хранить в памяти, документах или коммитах секреты и персональные данные.

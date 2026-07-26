@@ -1,0 +1,188 @@
+<!--
+THESIS: Рабочее место ведёт кафедральный учёт как последовательность наблюдений, а не как набор карточек.
+OWN-WORLD: Холодный белый лист, чернильный синий, спектральный зелёный и янтарь риска; линии реестра, вкладки и тонкие метки измерений.
+STORY: Администратор сразу видит состояние, приоритеты и последние движения, затем находит объект или продолжает действие.
+FIRST VIEWPORT: Слева — вертикальная шкала состояния и навигация; в центре — широкая запись смены с реестром оборудования; справа — наблюдения по статьям и ключам. Быстрые действия наверху справа.
+FORM: «Лабораторный журнал», направление 1 из 3; сценой выбран обычный монитор заведующего лабораторией в дневном свете.
+-->
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Концепт 01 — Лабораторный журнал</title>
+  <style>
+    :root { --ink:#10233d; --muted:#5c6c81; --paper:#f6f9fc; --white:#fff; --line:#d8e1eb; --line-dark:#b9c8d8; --green:#147c60; --green-pale:#e5f4ee; --amber:#a85408; --amber-pale:#fff1e3; --blue:#1d4d7d; --nav:#112842; --nav-soft:#1a3654; --shadow:0 12px 28px rgba(26,35,45,.1); }
+    * { box-sizing:border-box; }
+    html { background:var(--paper); }
+    body { margin:0; min-width:320px; color:var(--ink); background:var(--paper); font:14px/1.45 "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible { outline:3px solid #46a78b; outline-offset:2px; }
+    .app { display:grid; grid-template-columns:254px minmax(0,1fr); min-height:100vh; }
+    .rail { position:sticky; top:0; height:100vh; padding:22px 14px 18px; color:#dbe9f3; background:var(--nav); display:flex; flex-direction:column; overflow:auto; }
+    .brand { padding:0 10px 22px; border-bottom:1px solid rgba(219,233,243,.2); }
+    .brand-top { display:flex; align-items:center; gap:10px; color:#fff; font-weight:700; font-size:16px; }
+    .brand-mark { width:29px; height:29px; display:grid; place-items:center; border:1px solid #85c7b1; color:#b8ebd9; }
+    .brand small { display:block; margin:7px 0 0 39px; color:#aabed0; font-size:12px; }
+    .section-label { margin:20px 10px 7px; color:#aabed0; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+    .nav { display:grid; gap:2px; }
+    .nav button { display:flex; width:100%; align-items:center; gap:10px; padding:9px 10px; border:0; border-left:2px solid transparent; color:#dbe9f3; background:transparent; text-align:left; border-radius:2px; }
+    .nav button:hover,.nav button.active { background:var(--nav-soft); border-left-color:#78cdb4; color:#fff; }
+    .nav svg { width:17px; height:17px; flex:0 0 auto; }
+    .soon { margin-left:auto; padding:2px 5px; color:#c3d6e5; border:1px solid rgba(195,214,229,.55); font-size:11px; letter-spacing:.04em; }
+    .state-scale { margin-top:auto; padding:17px 10px 0; border-top:1px solid rgba(219,233,243,.2); }
+    .scale-title { color:#aabed0; font-size:11px; text-transform:uppercase; letter-spacing:.1em; }
+    .scale { display:grid; grid-template-columns:7px 1fr; gap:9px; margin-top:10px; }
+    .scale-line { display:grid; gap:4px; padding:2px 0; }
+    .scale-line i { display:block; height:21px; background:#2d4d6a; }
+    .scale-line i:nth-child(1),.scale-line i:nth-child(2) { background:#4eb18e; }
+    .scale-line i:nth-child(3) { background:#e5ac5c; }
+    .scale p { margin:0 0 5px; color:#dbe9f3; font-size:12px; }
+    .scale span { display:block; color:#aabed0; font-size:12px; }
+    .workspace { min-width:0; }
+    .topbar { min-height:83px; padding:16px clamp(18px,3vw,43px); display:flex; justify-content:space-between; align-items:center; gap:20px; border-bottom:1px solid var(--line); background:rgba(255,255,255,.92); }
+    .crumb { display:flex; gap:9px; align-items:center; color:var(--muted); font-size:12px; }
+    .crumb strong { color:var(--ink); font-size:16px; }
+    .top-actions { display:flex; align-items:center; gap:10px; }
+    .access { display:flex; gap:8px; align-items:center; padding:7px 10px; color:#5b3509; background:var(--amber-pale); border:1px solid #efd0a7; }
+    .access b { font-size:16px; line-height:1; }
+    .role { padding:7px 10px; color:#24415c; border:1px solid var(--line-dark); background:#f8fbfe; font-size:12px; }
+    .button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:36px; padding:8px 12px; border:1px solid var(--blue); color:#fff; background:var(--blue); font-weight:650; border-radius:2px; }
+    .button:hover { background:#143b62; }
+    .button.secondary { color:var(--blue); background:#fff; }
+    .button.secondary:hover { background:#edf4f9; }
+    .button svg { width:16px; height:16px; }
+    main { padding:28px clamp(18px,3vw,43px) 42px; max-width:1720px; }
+    .demo-line { display:flex; justify-content:space-between; gap:16px; padding-bottom:12px; border-bottom:1px solid var(--line-dark); color:var(--muted); font-size:12px; }
+    .demo-tag { color:var(--blue); font-weight:700; }
+    .intro { display:flex; justify-content:space-between; align-items:end; gap:18px; padding:20px 0 25px; }
+    h1 { margin:0; max-width:680px; font-size:clamp(25px,3vw,38px); line-height:1.1; letter-spacing:-.035em; }
+    .intro p { max-width:610px; margin:8px 0 0; color:var(--muted); }
+    .date-stamp { min-width:170px; padding:10px 0 8px 15px; border-left:2px solid var(--green); color:var(--muted); font-size:12px; }
+    .date-stamp b { display:block; color:var(--ink); font-size:15px; }
+    .warning-strip { display:grid; grid-template-columns:1fr auto; align-items:center; gap:16px; padding:11px 15px; border:1px solid #e7c69c; background:var(--amber-pale); color:#643905; }
+    .warning-strip strong { display:block; color:#603506; }
+    .warning-strip p { margin:2px 0 0; font-size:12px; }
+    .warning-strip button { border:0; border-bottom:1px solid currentColor; color:inherit; background:none; font-weight:700; }
+    .grid { display:grid; grid-template-columns:minmax(580px,1.65fr) minmax(260px,.7fr); gap:24px; margin-top:24px; align-items:start; }
+    .sheet { position:relative; background:var(--white); box-shadow:var(--shadow); border:1px solid var(--line); }
+    .sheet::before { content:""; position:absolute; left:15px; top:0; bottom:0; width:1px; background:#d5edf2; }
+    .sheet-head { display:flex; justify-content:space-between; align-items:end; gap:12px; padding:22px 22px 14px 34px; border-bottom:1px solid var(--line); }
+    .tab-strip { display:flex; gap:5px; align-self:flex-start; }
+    .tab-label { padding:5px 9px; color:#55708c; border:1px solid var(--line); border-bottom:0; background:#f4f8fb; font-size:12px; }
+    .tab-label.active { position:relative; top:1px; color:var(--ink); background:#fff; font-weight:700; }
+    h2 { margin:0; font-size:20px; letter-spacing:-.02em; }
+    .sheet-head p { margin:3px 0 0; color:var(--muted); font-size:12px; }
+    .legend { display:flex; gap:12px; color:var(--muted); font-size:11px; white-space:nowrap; }
+    .dot { display:inline-block; width:7px; height:7px; margin-right:4px; background:var(--green); vertical-align:middle; }
+    .dot.amber { background:var(--amber); }
+    .register-toolbar { display:flex; gap:10px; padding:14px 22px 14px 34px; border-bottom:1px solid var(--line); }
+    .search { position:relative; flex:1; }
+    .search svg { position:absolute; left:10px; top:10px; width:16px; height:16px; color:#59708a; }
+    input,select { min-height:36px; border:1px solid var(--line-dark); border-radius:2px; color:var(--ink); background:#fff; }
+    input { width:100%; padding:8px 10px 8px 33px; }
+    select { min-width:154px; padding:7px 28px 7px 9px; }
+    .table-scroll { overflow:auto; }
+    table { width:100%; min-width:650px; border-collapse:collapse; }
+    th { padding:10px 12px; color:#4d6279; background:#f5f8fb; border-bottom:1px solid var(--line-dark); text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+    th:first-child,td:first-child { padding-left:34px; }
+    td { padding:13px 12px; border-bottom:1px solid #e3eaf1; vertical-align:middle; }
+    tr:last-child td { border-bottom:0; }
+    tbody tr:hover { background:#f8fbfd; }
+    .object { font-weight:700; }
+    .sub { display:block; margin-top:2px; color:var(--muted); font-size:12px; }
+    .status { display:inline-flex; align-items:center; gap:5px; color:#17674f; font-size:12px; font-weight:650; white-space:nowrap; }
+    .status::before { content:""; width:7px; height:7px; background:currentColor; }
+    .status.caution { color:var(--amber); }
+    .status.neutral { color:#60758b; }
+    .empty-row td { padding:24px 34px; color:var(--muted); text-align:center; }
+    .sheet-foot { display:flex; justify-content:space-between; align-items:center; padding:12px 22px 13px 34px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+    .link-action { padding:0; border:0; color:var(--blue); background:none; font-weight:700; }
+    .side { display:grid; gap:24px; }
+    .note { position:relative; padding:19px 18px 16px 30px; background:#fff; border:1px solid var(--line); }
+    .note::before { content:""; position:absolute; left:15px; top:0; bottom:0; width:1px; background:#d5edf2; }
+    .note h2 { font-size:16px; }
+    .note-head { display:flex; justify-content:space-between; align-items:start; gap:10px; padding-bottom:13px; border-bottom:1px solid var(--line); }
+    .next { padding:3px 5px; border:1px solid #b7c6d5; color:#4d6279; font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
+    .article-list,.operation-list { list-style:none; padding:0; margin:0; }
+    .article-list li { display:grid; grid-template-columns:10px 1fr auto; gap:9px; align-items:start; padding:13px 0; border-bottom:1px solid #e7edf3; }
+    .article-list li:last-child,.operation-list li:last-child { border-bottom:0; }
+    .article-mark { width:8px; height:8px; margin-top:6px; background:var(--green); }
+    .article-mark.review { background:var(--amber); }
+    .article-list b { display:block; font-size:13px; }
+    .article-list span { color:var(--muted); font-size:12px; }
+    .article-list time { color:#4d6279; font-size:12px; white-space:nowrap; }
+    .article-summary { display:grid; grid-template-columns:repeat(2,1fr); gap:1px; margin:15px -18px -16px -30px; background:var(--line); border-top:1px solid var(--line); }
+    .article-summary div { padding:12px 14px 12px 30px; background:#f7fafc; }
+    .article-summary b { display:block; font-size:20px; }
+    .article-summary span { color:var(--muted); font-size:12px; }
+    .operation-list li { display:grid; grid-template-columns:31px 1fr; gap:9px; padding:12px 0; border-bottom:1px solid #e7edf3; }
+    .op-icon { width:29px; height:29px; display:grid; place-items:center; color:var(--green); border:1px solid #9bcebc; }
+    .op-icon.return { color:var(--blue); border-color:#abc1d5; }
+    .op-icon svg { width:15px; height:15px; }
+    .operation-list b { display:block; font-size:12px; }
+    .operation-list span { display:block; color:var(--muted); font-size:12px; }
+    .toast { position:fixed; right:22px; bottom:22px; z-index:20; transform:translateY(130%); padding:12px 15px; color:#fff; background:#183a5c; box-shadow:0 12px 30px rgba(0,0,0,.22); transition:transform .24s ease; }
+    .toast.show { transform:translateY(0); }
+    @media (max-width:1050px) { .grid { grid-template-columns:1fr; } .side { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media (max-width:760px) { .app { display:block; } .rail { position:relative; height:auto; padding:14px 12px 0; overflow:visible; } .brand { display:flex; align-items:center; gap:10px; padding:0 5px 12px; border:0; } .brand small,.section-label,.state-scale { display:none; } .nav { display:flex; width:calc(100% + 24px); margin-left:-12px; padding:0 12px 10px; overflow:auto; } .nav button { flex:0 0 auto; width:auto; padding:8px 9px; border-left:0; border-bottom:2px solid transparent; } .nav button:hover,.nav button.active { border-bottom-color:#78cdb4; } .nav button span:not(.soon) { display:none; } .soon { display:none; } .topbar { min-height:0; padding:12px 18px; align-items:flex-start; } .crumb { display:block; } .crumb span { display:none; } .top-actions { flex-wrap:wrap; justify-content:flex-end; } .role { display:none; } main { padding:18px; } .demo-line { align-items:start; } .intro { display:block; padding:17px 0 20px; } .date-stamp { margin-top:15px; } .warning-strip { grid-template-columns:1fr; } .warning-strip button { justify-self:start; } .grid { margin-top:18px; gap:18px; } .side { grid-template-columns:1fr; gap:18px; } .sheet-head { display:block; padding:17px 14px 12px 29px; } .tab-strip { margin-bottom:14px; overflow:auto; } .legend { margin-top:10px; } .register-toolbar { padding:12px 14px 12px 29px; flex-wrap:wrap; } .search { flex-basis:100%; } select { flex:1; } .sheet-foot { padding-left:29px; } }
+    @media (max-width:430px) { .top-actions .access { order:3; width:100%; } .top-actions { gap:7px; } .button { min-height:34px; padding:7px 9px; font-size:12px; } .tab-label { font-size:10px; white-space:nowrap; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; } }
+    @media (max-width:430px) { .tab-label { font-size:11px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail" aria-label="Разделы системы">
+      <div class="brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 19V5h14v14M8 8h8M8 12h8M8 16h5"/></svg></div><div><div class="brand-top">Контур кафедры</div><small>Рабочая среда · демо</small></div></div>
+      <p class="section-label">Реестр</p>
+      <nav class="nav">
+        <button class="active" type="button" aria-label="Обзор" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg><span>Обзор</span></button>
+        <button type="button" aria-label="Оборудование" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19h16M7 19V9h10v10M9 9V5h6v4M10 13h4"/></svg><span>Оборудование</span></button>
+        <button type="button" aria-label="Ключи" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="3"/><path d="m10 13 8-8 3 3-8 8M16 7l3 3"/></svg><span>Ключи</span></button>
+        <button type="button" aria-label="Мебель" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20V7h14v13M3 20h18M8 7V4h8v3M9 11h6M9 15h6"/></svg><span>Мебель</span></button>
+        <button type="button" aria-label="Химикаты" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v6l-5 8a3 3 0 0 0 3 4h8a3 3 0 0 0 3-4l-5-8V3M8 15h8"/></svg><span>Химикаты</span></button>
+        <button type="button" aria-label="Лабораторная посуда" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v8.2a5 5 0 1 0 8 0V3M8 7h8M7 21h10"/></svg><span>Лаб. посуда</span></button>
+        <button type="button" aria-label="Статьи" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h10l3 3v15H6zM16 3v4h4M9 12h6M9 16h6"/></svg><span>Статьи</span></button>
+        <button type="button" aria-label="Пользователи" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M5 21a7 7 0 0 1 14 0"/></svg><span>Пользователи</span></button>
+        <button type="button" aria-label="Ассистенты — следующий этап" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a7 7 0 0 1 7 7c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 7-7Z"/><path d="M9.5 10h5M12 7.5v5"/></svg><span>Ассистенты</span><span class="soon">Скоро</span></button>
+        <button type="button" aria-label="Справочник — следующий этап" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3 3V4Z"/><path d="M8 8h7M8 12h7"/></svg><span>Справочник</span><span class="soon">Скоро</span></button>
+      </nav>
+      <div class="state-scale"><div class="scale-title">Шкала состояния кафедры</div><div class="scale"><div class="scale-line" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div><p>Рабочий контур <span>2 проверки требуют внимания</span></p><p>Доступ <span>3 заявки ожидают решения</span></p></div></div></div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar"><div class="crumb"><strong>Рабочий обзор</strong><span aria-hidden="true">/</span><span>Смена 26.07</span></div><div class="top-actions"><div class="access" aria-label="Три заявки на доступ"><b>3</b><span>заявки на доступ</span></div><span class="role">Роль: Администратор</span><button class="button secondary" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>Добавить объект</button><button class="button" data-demo><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="3"/><path d="m10 13 8-8 3 3-8 8"/></svg>Выдать ключ</button></div></header>
+      <main>
+        <div class="demo-line"><span class="demo-tag">Демонстрационные данные</span><span>Прототип рабочего места администратора · операции не выполняются</span></div>
+        <section class="intro" aria-labelledby="page-title"><div><h1 id="page-title">Запись состояния на сегодня</h1><p>Сводка реестров, сроков и действий, которые требуют внимания до завершения рабочего дня.</p></div><div class="date-stamp"><b>26 июля · суббота</b>Контрольная отметка 09:40</div></section>
+        <section class="warning-strip" aria-label="Предупреждения"><div><strong>2 просроченные поверки · 3 заявки на доступ</strong><p>Требуют решения администратора или заведующего лабораторией.</p></div><button data-demo>Открыть журнал наблюдений</button></section>
+        <div class="grid">
+          <section class="sheet" aria-labelledby="equipment-title"><div class="sheet-head"><div><div class="tab-strip" aria-label="Вкладки реестра"><span class="tab-label active">Реестр оборудования</span><span class="tab-label">Сводка 128</span></div><h2 id="equipment-title">Оборудование под наблюдением</h2><p>Показаны демонстрационные данные · 4 из 128 записей</p></div><div class="legend"><span><i class="dot"></i>в норме</span><span><i class="dot amber"></i>контроль</span></div></div>
+            <div class="register-toolbar"><label class="search"><span class="sr-only">Поиск оборудования</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg><input id="equipment-search" type="search" placeholder="Найти по названию или инвентарному номеру"></label><label><span class="sr-only">Статус оборудования</span><select id="status-filter"><option value="all">Все статусы</option><option value="ready">В норме</option><option value="control">Контроль</option><option value="service">На обслуживании</option></select></label></div>
+            <div class="table-scroll"><table><thead><tr><th>Объект</th><th>Инв. №</th><th>Зона</th><th>Поверка</th><th>Статус</th></tr></thead><tbody id="equipment-body"><tr data-status="ready"><td><span class="object">Микроскоп МБС-10</span><span class="sub">Оптический модуль</span></td><td>ОБ-0248</td><td>Лаб. 314</td><td>12.11.2026</td><td><span class="status">В норме</span></td></tr><tr data-status="control"><td><span class="object">Аналитические весы</span><span class="sub">Серия AX-200</span></td><td>ОБ-0179</td><td>Лаб. 312</td><td>Просрочена</td><td><span class="status caution">Контроль</span></td></tr><tr data-status="service"><td><span class="object">Вытяжной шкаф</span><span class="sub">Пост № 2</span></td><td>ОБ-0091</td><td>Лаб. 315</td><td>03.09.2026</td><td><span class="status neutral">Обслуживание</span></td></tr><tr data-status="control"><td><span class="object">Спектрофотометр</span><span class="sub">UV-Vis</span></td><td>ОБ-0320</td><td>Лаб. 314</td><td>Просрочена</td><td><span class="status caution">Контроль</span></td></tr></tbody></table></div>
+            <div class="sheet-foot"><span id="filter-result">4 записи в текущей выборке</span><button class="link-action" data-demo>Открыть реестр</button></div>
+          </section>
+          <aside class="side" aria-label="Наблюдения и последние операции">
+            <section class="note" aria-labelledby="articles-title"><div class="note-head"><div><h2 id="articles-title">Статусы статей</h2><span class="sub">Демонстрационные данные</span></div><span class="next">Следующий этап</span></div><ul class="article-list"><li><i class="article-mark"></i><div><b>Методика анализа образцов</b><span>Рукопись · редактура</span></div><time>28.07</time></li><li><i class="article-mark review"></i><div><b>Лабораторная безопасность</b><span>Рецензирование</span></div><time>02.08</time></li><li><i class="article-mark"></i><div><b>Параметры измерений</b><span>Сбор материалов</span></div><time>09.08</time></li></ul><div class="article-summary"><div><b>24</b><span>всего статей</span></div><div><b>7</b><span>в работе</span></div></div></section>
+            <section class="note" aria-labelledby="keys-title"><div class="note-head"><div><h2 id="keys-title">Ключи · последние операции</h2><span class="sub">42 ключа · 6 выдано</span></div><button class="link-action" data-demo>Все</button></div><ul class="operation-list"><li><div class="op-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="3"/><path d="m10 13 8-8 3 3-8 8"/></svg></div><div><b>Выдан ключ Л-314</b><span>Демонстрационная запись · 09:12</span></div></li><li><div class="op-icon return"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h12M12 7l5 5-5 5"/><circle cx="6" cy="12" r="2"/></svg></div><div><b>Возвращён ключ Л-205</b><span>Демонстрационная запись · 08:47</span></div></li><li><div class="op-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="3"/><path d="m10 13 8-8 3 3-8 8"/></svg></div><div><b>Выдан ключ С-118</b><span>Демонстрационная запись · вчера, 17:24</span></div></li></ul></section>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite">Прототип: действие не выполняется</div>
+  <style>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}</style>
+  <script>
+    (() => {
+      const toast = document.querySelector('#toast'); let timer;
+      const showToast = () => { toast.classList.add('show'); clearTimeout(timer); timer = setTimeout(() => toast.classList.remove('show'), 2600); };
+      document.querySelectorAll('[data-demo]').forEach(button => button.addEventListener('click', showToast));
+      const search = document.querySelector('#equipment-search'); const filter = document.querySelector('#status-filter'); const rows = [...document.querySelectorAll('#equipment-body tr')]; const result = document.querySelector('#filter-result');
+      function applyFilter() { const term = search.value.trim().toLowerCase(); const status = filter.value; let count = 0; rows.forEach(row => { const match = (!term || row.textContent.toLowerCase().includes(term)) && (status === 'all' || row.dataset.status === status); row.hidden = !match; if (match) count++; }); let empty = document.querySelector('.empty-row'); if (!count) { if (!empty) { empty = document.createElement('tr'); empty.className = 'empty-row'; empty.innerHTML = '<td colspan="5">По этой отметке записей нет.</td>'; document.querySelector('#equipment-body').append(empty); } } else if (empty) empty.remove(); result.textContent = `${count} ${count === 1 ? 'запись' : count < 5 ? 'записи' : 'записей'} в текущей выборке`; }
+      search.addEventListener('input', applyFilter); filter.addEventListener('change', applyFilter);
+    })();
+  </script>
+</body>
+</html>

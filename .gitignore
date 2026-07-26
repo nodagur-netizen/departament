@@ -4,6 +4,9 @@ Dockerfile
 /.tools/
 /.local/
 /.cache/
+/.agents/
+/.codex/
+/graphify-out/
 
 # Local configuration and secrets.
 .env
